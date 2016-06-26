@@ -18,7 +18,7 @@ namespace GenCon
         protected int numOfVariables;
 
         // Global optimum
-        private double globalOptimum;
+        protected double globalOptimum;
 
         // Function itself
         private FunctionCalculator functionCalc;

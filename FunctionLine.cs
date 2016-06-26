@@ -72,7 +72,7 @@ namespace GenCon
         {
             return parList =>
             {
-                return 100 + Math.Pow((Math.Pow(parList[0], 2) - parList[1]), 2) + Math.Pow((1 - parList[0]), 2);
+                return 100 * Math.Pow((Math.Pow(parList[0], 2) - parList[1]), 2) + Math.Pow((1 - parList[0]), 2);
             };
         }
 

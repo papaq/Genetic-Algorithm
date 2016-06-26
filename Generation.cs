@@ -19,6 +19,16 @@ namespace GenCon
             public double[] variables;
         }
 
+        /// <summary>
+        /// Structure for Element details
+        /// </summary>
+        public struct ElementOptimum
+        {
+            public double optimum;
+            public double fitness;
+            public Element element;
+        }
+
 
         // List of all elements in a generation
         private List<Element> generation;
@@ -49,7 +59,7 @@ namespace GenCon
         /// <param name="funcIdx">Index of the function in the name array</param>
         /// <param name="elitism">Elitism rate</param>
         /// <param name="mutation">Mutation rate</param>
-        public Generation(int numOfLs, int numOfVars, int left, int right, double optimum, int funcIdx, double elitism, double mutation) 
+        public Generation(int numOfLs, int numOfVars, double left, double right, double optimum, int funcIdx, double elitism, double mutation) 
             : base(left, right - left, numOfVars, optimum, funcIdx)
         {
 
@@ -62,6 +72,90 @@ namespace GenCon
             random = new Random();
 
             FillGeneration();
+        }
+
+        /// <summary>
+        /// Go through the whole life cycle of generation
+        /// </summary>
+        /// <returns>Element with best fitness</returns>
+        public ElementOptimum LifeCycle()
+        {
+            // Calculate fitness for our generation
+            double[] fitnessArray = CalculateFitness(generation);
+
+            // Check if Optimum found than return it
+            int maxFitnessIdx = FindMaxFitness(generation, fitnessArray);
+            if (fitnessArray[maxFitnessIdx] > .99)
+            {
+                return new ElementOptimum()
+                {
+                    element = generation[maxFitnessIdx],
+                    optimum = CalculateFunction(generation[maxFitnessIdx].variables),
+                    fitness = fitnessArray[maxFitnessIdx],
+                };
+            }
+
+            // Choose parents for a new generation
+            int[] parents = TournamentSelection(fitnessArray);
+
+            // Create new generation and calculate fitness rates
+            List<Element> newGeneration = Crossover(parents);
+            double[] newGenFitnessArray = CalculateFitness(newGeneration);
+
+            // Check if Optimum found than return it
+            maxFitnessIdx = FindMaxFitness(newGeneration, newGenFitnessArray);
+            if (newGenFitnessArray[maxFitnessIdx] > .98)
+            {
+                return new ElementOptimum()
+                {
+                    element = newGeneration[maxFitnessIdx],
+                    optimum = CalculateFunction(newGeneration[maxFitnessIdx].variables),
+                    fitness = newGenFitnessArray[maxFitnessIdx],
+                };
+            }
+
+            // Execute elitism
+            newGeneration = Elitism(generation, newGeneration, fitnessArray, newGenFitnessArray);
+            
+            // Execute mutation
+            newGeneration = Mutation(newGeneration);
+
+            // Set newGeneration as generation
+            generation.Clear();
+            generation = newGeneration;
+
+            // Set variables to find return values
+            fitnessArray = CalculateFitness(generation);
+            maxFitnessIdx = FindMaxFitness(generation, fitnessArray);
+
+            // Return best element
+            return new ElementOptimum()
+            {
+                element = generation[maxFitnessIdx],
+                optimum = CalculateFunction(generation[maxFitnessIdx].variables),
+                fitness = fitnessArray[maxFitnessIdx],
+            };
+        }
+
+        /// <summary>
+        /// Find the index of an element with best fitness
+        /// </summary>
+        /// <param name="gen">Generation</param>
+        /// <param name="fitnessArray">Array of fitness values</param>
+        /// <returns>Index of an element</returns>
+        private int FindMaxFitness(List<Element> gen, double[] fitnessArray)
+        {
+            int tempMaxFitnessIdx = 0;
+
+            for (int i = 1; i < numberOfElements; i++)
+            {
+                if (fitnessArray[i] > fitnessArray[tempMaxFitnessIdx])
+                {
+                    tempMaxFitnessIdx = i;
+                }
+            }
+
+            return tempMaxFitnessIdx;
         }
 
         /// <summary>
@@ -109,18 +203,18 @@ namespace GenCon
         private double[] CalculateFitness(List<Element> generation)
         {
             double[] newFitnessFactors = new double[numberOfElements];
-            double[] elementsOptimums = new double[numberOfElements];
+            double[] elementsMidRates = new double[numberOfElements];
             double reversedRateSum = 0;
 
             for (int i = 0; i < numberOfElements; i++)
             {
-                elementsOptimums[i] = CalculateFunction(generation[i].variables);
-                reversedRateSum += 1 / elementsOptimums[i];
+                elementsMidRates[i] = Math.Abs(globalOptimum - CalculateFunction(generation[i].variables));
+                reversedRateSum += 1 / elementsMidRates[i];
             }
 
             for (int i = 0; i < numberOfElements; i++)
             {
-                newFitnessFactors[i] = 1 / (elementsOptimums[i] * reversedRateSum);
+                newFitnessFactors[i] = 1 / (elementsMidRates[i] * reversedRateSum);
             }
 
             return newFitnessFactors;
@@ -294,9 +388,11 @@ namespace GenCon
         /// <summary>
         /// Execute mutations with elements from current generation
         /// </summary>
-        private void Mutation()
+        /// <param name="generation">Generation to be mutated</param>
+        /// <returns>Mutated generation</returns>
+        private List<Element> Mutation(List<Element> generation)
         {
-            int genesToBeMutated = (int)(mutationRate * numberOfElements * numOfVariables);
+            int genesToBeMutated = (int)(mutationRate * numberOfElements);
 
             for (int i = 0; i < genesToBeMutated; i++)
             {
@@ -305,6 +401,8 @@ namespace GenCon
 
                 generation[randomElement].variables[randomGene] = RandomFromRange();
             }
+
+            return generation;
         }
     }
 }

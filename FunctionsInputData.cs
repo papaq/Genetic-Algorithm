@@ -30,6 +30,7 @@ namespace GenCon
         {
             FillIntervals();
             FillGlobalOptimum();
+            FillNumberOfVars();
         }
 
         public Interval GetInterval(int idx)
@@ -42,7 +43,7 @@ namespace GenCon
             return glOptimum[idx];
         }
 
-        public double GetNumOfVars(int idx)
+        public int GetNumOfVars(int idx)
         {
             return numberOfVars[idx];
         }
