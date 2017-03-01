@@ -20,9 +20,10 @@ namespace GenCon
 
         private int _functionIndex;
 
-        private static int _numberOfEls, _numberOfVars;
-        private static double _leftBorder, _rightBorder;
-        private static double _globalOptimum, _elitismRate, _mutationRate;
+        private int _numberOfEls, _numberOfVars, _numberOfGenerations;
+        private double _leftBorder, _rightBorder;
+        private double _globalOptimum, _elitismRate, _mutationRate;
+        private bool _isMinWeLookingFor;
 
         readonly FunctionsInputData _funcInputData;
 
@@ -88,8 +89,9 @@ namespace GenCon
 
         private void FillStaticVars()
         {
-            _numberOfEls = Convert.ToInt16(TextBox_NumberOfEls.Text);
+            _numberOfEls = Convert.ToInt32(TextBox_NumberOfEls.Text);
             _numberOfVars = _funcInputData.GetNumOfVars(_functionIndex);
+            _numberOfGenerations = Convert.ToInt32(TextBox_NofGenerations.Text);
             _leftBorder = _funcInputData.GetInterval(_functionIndex).LeftBorder;
             _rightBorder = _funcInputData.GetInterval(_functionIndex).RightBorder;
             _globalOptimum = _funcInputData.GetGlobalOptimum(_functionIndex);
@@ -113,6 +115,8 @@ namespace GenCon
 
             TextBox_IntervalLeft.Text = _funcInputData.GetInterval(_functionIndex).LeftBorder.ToString(CultureInfo.InvariantCulture);
             TextBox_IntervalRight.Text = _funcInputData.GetInterval(_functionIndex).RightBorder.ToString(CultureInfo.InvariantCulture);
+            Label_GlobalOptimum.Content = "Global " + (_funcInputData.IsFuncMin(_functionIndex) ? "min" : "max");
+            _isMinWeLookingFor = _funcInputData.IsFuncMin(_functionIndex);
 
             TextBox_GlobalOptimum.Text =
                 _funcInputData.GetGlobalOptimum(_functionIndex).ToString(CultureInfo.InvariantCulture);
@@ -139,41 +143,38 @@ namespace GenCon
                 _leftBorder,
                 _rightBorder,
                 _globalOptimum,
+                _isMinWeLookingFor,
                 _functionIndex,
                 _elitismRate,
                 _mutationRate);
-
-            long genIdx = 1;
-            while (_goOn)
+            
+            for (var i = 0; i < _numberOfGenerations; i++)
             {
                 var currentBestElement = generationInstance.LifeCycle();
                 
-
-                //if (genIdx % 10 == 0)
-                //{
-                var idx = genIdx;
+                var idx = i;
                 InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
                     Label_GenerationCurrent.Content = idx.ToString();
                 });
-                //}
 
                 InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
-                    Label_OptimumNow.Content = String.Format("{0:0.##### }", currentBestElement.Optimum);
+                    Label_OptimumNow.Content = String.Format("{0:0.##### }", currentBestElement);
                 });
                 
-                Thread.Sleep(10);
+                Thread.Sleep(0);
+                
+                if (_goOn) continue;
 
-
-                if (currentBestElement.Fitness > .99)
-                {
-                    _goOn = false;
-                    InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
-                        Button_StartStop.Content = "Start";
-                    });
-                }
-
-                genIdx++;
+                InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
+                    Button_StartStop.Content = "Start";
+                });
+                break;
             }
+
+            _goOn = false;
+            InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
+                Button_StartStop.Content = "Start";
+            });
         }
 
         private static void InvokeActonWithDispatcher(DispatcherObject uiElement, Action action)

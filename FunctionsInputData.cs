@@ -20,11 +20,14 @@
         // Array of numbers of variables in a function
         private int[] _numberOfVars;
 
+        private bool[] _min;
+
         public FunctionsInputData()
         {
             FillIntervals();
             FillGlobalOptimum();
             FillNumberOfVars();
+            FillMaxOrMin();
         }
 
         public Interval GetInterval(int idx)
@@ -40,6 +43,11 @@
         public int GetNumOfVars(int idx)
         {
             return _numberOfVars[idx];
+        }
+
+        public bool IsFuncMin(int idx)
+        {
+            return _min[idx];
         }
 
         private void FillIntervals()
@@ -85,6 +93,21 @@
                 4,
                 6,
                 10,
+            };
+        }
+
+        private void FillMaxOrMin()
+        {
+            _min = new[]
+            {
+                false,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                false,
             };
         }
 

@@ -13,7 +13,7 @@
 
         // Global optimum
         protected double GlobalOptimum;
-
+        
         // Function itself
         private FunctionCalculator _functionCalc;
 

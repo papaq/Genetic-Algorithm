@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Media.Animation;
 
 namespace GenCon
 {
-    public delegate double[] DottedCrossover(double[] parent1, double[] parent2);
+    public delegate double[] DottedCrossingOver(double[] parent1, double[] parent2);
+
+    public delegate int BestFunctionValueIndexCalculator(List<Generation.ElementValue> listOfFunctionValues);
+
+    public delegate void BestValueChecker(Generation.ElementVariables newSpecies);
 
     // All processes of a generation
     public class Generation : Function 
@@ -12,7 +17,7 @@ namespace GenCon
         /// <summary>
         /// Structure is to keep an element of a generation and all genes inside
         /// </summary>
-        public struct Element
+        public struct ElementVariables
         {
             public double[] Variables;
         }
@@ -20,29 +25,37 @@ namespace GenCon
         /// <summary>
         /// Structure for Element details
         /// </summary>
-        public struct ElementOptimum
+        public struct ElementValue
         {
-            public double Optimum;
-            public double Fitness;
-            public Element Element;
+            public int Index;
+            public double FunctionValue;
         }
 
         //public static double AvarageFitnessRate;    
 
         // List of all elements in a generation
-        private List<Element> _generation;
+        private List<ElementVariables> _generation;
 
         // Number of elements in a generation
         private readonly int _numberOfElements;
-
-        // Array of fitness factors
-        private double[] _elementsFitnessFactors;
-
+        
         // Part of Elements taking part in elitism
         private readonly double _elitismRate;
 
         // Part of Elements that take part in mutations
         private readonly double _mutationRate;
+
+        // Crossing over calculator
+        private DottedCrossingOver _executeCrossingOver;
+
+        // Fitness calculator
+        private BestFunctionValueIndexCalculator _calculateBestValueIndex;
+
+        // Change best species for the better
+        private BestValueChecker _checkIfNewBetter;
+
+        // Best element found
+        private ElementVariables _bestElement;
 
         // Randoms come from here
         private readonly Random _random;
@@ -58,29 +71,80 @@ namespace GenCon
         /// <param name="left">Left side of the interval</param>
         /// <param name="right">Right side of the interval</param>
         /// <param name="optimum">Global optimum of the function</param>
+        /// <param name="isMin">Admits whether we search for min value</param>
         /// <param name="funcIdx">Index of the function in the name array</param>
         /// <param name="elitism">Elitism rate</param>
         /// <param name="mutation">Mutation rate</param>
-        public Generation(int numOfLs, int numOfVars, double left, double right, double optimum, int funcIdx, double elitism, double mutation) 
+        public Generation(int numOfLs, 
+            int numOfVars, 
+            double left, 
+            double right, 
+            double optimum,
+            bool isMin,
+            int funcIdx,
+            double elitism, 
+            double mutation)
             : base(left, right - left, numOfVars, optimum, funcIdx)
         {
 
             _numberOfElements = numOfLs;
-            _generation = new List<Element>();
-            _elementsFitnessFactors = new double[numOfLs];
+            _generation = new List<ElementVariables>();
             _elitismRate = elitism;
             _mutationRate = mutation;
+
+            SetCrossingOver();
+            SetBestValueIndexCalculator(isMin);
+            SetBestValueChecker(isMin);
 
             _random = new Random();
 
             FillGeneration();
         }
 
+        private void SetCrossingOver()
+        {
+            switch (NumOfVariables)
+            {
+                case 1:
+                    _executeCrossingOver = ZeroDottedCrossingOver;
+                    break;
+                case 2:
+                    _executeCrossingOver = OneDottedCrossingOver;
+                    break;
+                default:
+                    _executeCrossingOver = TwoDottedCrossingOver;
+                    break;
+            }
+        }
+
+        private void SetBestValueIndexCalculator(bool isMin)
+        {
+            if (isMin)
+            {
+                _calculateBestValueIndex = CalculateMinFunctionValue;
+                return;
+            }
+
+            _calculateBestValueIndex = CalculateMaxFunctionValue;
+        }
+
+        private void SetBestValueChecker(bool isMin)
+        {
+            if (isMin)
+            {
+                _checkIfNewBetter = ChangeBestMin;
+                return;
+            }
+
+            _checkIfNewBetter = ChangeBestMax;
+        }
+
+
         /// <summary>
         /// Go through the whole life cycle of generation
         /// </summary>
         /// <returns>Element with best fitness</returns>
-        public ElementOptimum LifeCycle()
+        public double LifeCycle()
         {
 
             // Fitness calculation
@@ -93,19 +157,15 @@ namespace GenCon
 
 
             // Calculate fitness for our generation
-            var fitnessArray = CalculateFitness(_generation);
+            var fitnessArray = CalculateFitness(_generation);/////////////////////////////////////////////////////
 
             // Check if Optimum is found than return it
-            var maxFitnessIdx = FindMaxFitness(fitnessArray);
-            if (fitnessArray[maxFitnessIdx] > .99)
-            {
-                return new ElementOptimum()
-                {
-                    Element = _generation[maxFitnessIdx],
-                    Optimum = CalculateFunction(_generation[maxFitnessIdx].Variables),
-                    Fitness = fitnessArray[maxFitnessIdx],
-                };
-            }
+            var maxFitnessIdx = FindMaxFitnessIndex(fitnessArray);
+
+
+
+            // Set new best value, if really
+            _checkIfNewBetter(_generation[maxFitnessIdx]);
 
             // Choose parents for a new generation
             var parents = TournamentSelection(fitnessArray);
@@ -115,16 +175,12 @@ namespace GenCon
             var newGenFitnessArray = CalculateFitness(newGeneration);
 
             // Check if Optimum is found than return it
-            maxFitnessIdx = FindMaxFitness(newGenFitnessArray);
-            if (newGenFitnessArray[maxFitnessIdx] > .99)
-            {
-                return new ElementOptimum()
-                {
-                    Element = newGeneration[maxFitnessIdx],
-                    Optimum = CalculateFunction(newGeneration[maxFitnessIdx].Variables),
-                    Fitness = newGenFitnessArray[maxFitnessIdx],
-                };
-            }
+            maxFitnessIdx = FindMaxFitnessIndex(newGenFitnessArray);
+
+
+
+            // Set new best value, if really
+            _checkIfNewBetter(newGeneration[maxFitnessIdx]);
 
             // Execute elitism
             newGeneration = Elitism(_generation, newGeneration, fitnessArray, newGenFitnessArray);
@@ -138,18 +194,10 @@ namespace GenCon
 
             // Set variables to find return values
             fitnessArray = CalculateFitness(_generation);
-            maxFitnessIdx = FindMaxFitness(fitnessArray);
-
-            // Calculate avarage fitness
-            //CalculateAvarageFitness(fitnessArray);
-
+            maxFitnessIdx = FindMaxFitnessIndex(fitnessArray);
+            
             // Return best element
-            return new ElementOptimum()
-            {
-                Element = _generation[maxFitnessIdx],
-                Optimum = CalculateFunction(_generation[maxFitnessIdx].Variables),
-                Fitness = fitnessArray[maxFitnessIdx],
-            };
+            return CalculateFunction(_bestElement.Variables);
         }
 
         /// <summary>
@@ -157,8 +205,9 @@ namespace GenCon
         /// </summary>
         /// <param name="fitnessArray">Array of fitness values</param>
         /// <returns>Index of an element</returns>
-        private int FindMaxFitness(IReadOnlyList<double> fitnessArray)
+        private int FindMaxFitnessIndex(IReadOnlyList<double> fitnessArray)
         {
+            /*
             var tempMaxFitnessIdx = 0;
 
             for (var i = 1; i < _numberOfElements; i++)
@@ -170,18 +219,70 @@ namespace GenCon
             }
 
             return tempMaxFitnessIdx;
+            */
+
+            return FindMaxDoubleValueIdx(fitnessArray);
         }
 
-        /*
-        /// <summary>
-        /// Calculates avarage fitness rate for ui
-        /// </summary>
-        /// <param name="fitnessRates">Array of fitness rates</param>
-        private void CalculateAvarageFitness(double[] fitnessRates)
+        private static int FindMaxDoubleValueIdx(IReadOnlyList<double> arr)
         {
-            AvarageFitnessRate = fitnessRates.Sum() / fitnessRates.Length;
+            var maxIndex = 0;
+            var maxValue = arr[0];
+
+            for (var i = 1; i < arr.Count; i++)
+            {
+                if (!(arr[i] > maxValue)) continue;
+
+                maxIndex = i;
+                maxValue = arr[i];
+            }
+
+            return maxIndex;
         }
-        */
+
+        private static int FindMinDoubleValueIdx(IReadOnlyList<double> arr)
+        {
+            var maxIndex = 0;
+            var maxValue = arr[0];
+
+            for (var i = 1; i < arr.Count; i++)
+            {
+                if (!(arr[i] > maxValue)) continue;
+
+                maxIndex = i;
+                maxValue = arr[i];
+            }
+
+            return maxIndex;
+        }
+
+        private void ChangeBestMin(ElementVariables newSpecies)
+        {
+            if (_bestElement.Variables == null)
+            {
+                _bestElement = newSpecies;
+                return;
+            }
+
+            if (CalculateFunction(_bestElement.Variables) > CalculateFunction(newSpecies.Variables))
+            {
+                _bestElement = newSpecies;
+            }
+        }
+
+        private void ChangeBestMax(ElementVariables newSpecies)
+        {
+            if (_bestElement.Variables == null)
+            {
+                _bestElement = newSpecies;
+                return;
+            }
+
+            if (CalculateFunction(_bestElement.Variables) < CalculateFunction(newSpecies.Variables))
+            {
+                _bestElement = newSpecies;
+            }
+        }
 
         /// <summary>
         /// Fills the generation with elements
@@ -190,7 +291,7 @@ namespace GenCon
         {
             for (var i = 0; i < _numberOfElements; i++)
             {
-                _generation.Add(new Element() {
+                _generation.Add(new ElementVariables() {
                     Variables = FillElementRandom(),
                 });
             }
@@ -225,15 +326,20 @@ namespace GenCon
         /// </summary>
         /// <param name="generation">Specific generation</param>
         /// <returns>Array of fitnesses for every element</returns>
-        private double[] CalculateFitness(IReadOnlyList<Element> generation)
+        private double[] CalculateFitness(IReadOnlyList<ElementVariables> generation)
         {
             var newFitnessFactors = new double[_numberOfElements];
             var elementsMidRates = new double[_numberOfElements];
             double reversedRateSum = 0;
 
+            var bestValueIndex = _calculateBestValueIndex(MakeListOfElementsFunctionValues(_generation));
+            var bestValue = CalculateFunction(generation[bestValueIndex].Variables);
+
             for (var i = 0; i < _numberOfElements; i++)
             {
-                elementsMidRates[i] = Math.Abs(GlobalOptimum - CalculateFunction(generation[i].Variables));
+                elementsMidRates[i] = i == bestValueIndex 
+                    ? 0.1 ////////////////////////////////////////////////////////////////////// Or another??????
+                    : Math.Abs(bestValue - CalculateFunction(generation[i].Variables));
                 reversedRateSum += 1 / elementsMidRates[i];
             }
 
@@ -245,6 +351,33 @@ namespace GenCon
             return newFitnessFactors;
         }
 
+        private static int CalculateMinFunctionValue(List<ElementValue> listOfFunctionValues)
+        {
+            var bestValueIndex = listOfFunctionValues.OrderByDescending(x => x.FunctionValue).Last().Index;
+
+            return bestValueIndex;
+        }
+
+        private static int CalculateMaxFunctionValue(List<ElementValue> listOfFunctionValues)
+        {
+            var bestValueIndex = listOfFunctionValues.OrderByDescending(x => x.FunctionValue).First().Index;
+
+            return bestValueIndex;
+        }
+
+        private List<ElementValue> MakeListOfElementsFunctionValues(IEnumerable<ElementVariables> generation)
+        {
+            var index = 0;
+
+            var listOfFunctionValues = generation.Select(element => new ElementValue
+            {
+                FunctionValue = CalculateFunction(element.Variables),
+                Index = index++,
+            }).ToList();
+
+            return listOfFunctionValues;
+        }
+        
         /// <summary>
         /// Selects parents for the new generation
         /// </summary>
@@ -270,30 +403,16 @@ namespace GenCon
         /// </summary>
         /// <param name="parentsArray">Array of parent pairs</param>
         /// <returns>A new generation</returns>
-        private List<Element> CrossingOver(IReadOnlyList<int> parentsArray)
+        private List<ElementVariables> CrossingOver(IReadOnlyList<int> parentsArray)
         {
-            var newGeneration = new List<Element>();
-            DottedCrossover crossingOverType;
-
-            switch (NumOfVariables)
-            {
-                case 1:
-                    crossingOverType = ZeroDottedCrossingOver;
-                    break;
-                case 2:
-                    crossingOverType = OneDottedCrossingOver;
-                    break;
-                default:
-                    crossingOverType = TwoDottedCrossingOver;
-                    break;
-            }
+            var newGeneration = new List<ElementVariables>();
 
             for (var i = 0; i < _numberOfElements; i++)
             {
-                newGeneration.Add(new Element()
+                newGeneration.Add(new ElementVariables()
                 {
                     Variables =
-                        crossingOverType(_generation[parentsArray[i * 2]].Variables,
+                        _executeCrossingOver(_generation[parentsArray[i * 2]].Variables,
                             _generation[parentsArray[i * 2 + 1]].Variables)
                 });
             }
@@ -387,29 +506,30 @@ namespace GenCon
         /// <param name="oldFitness">Fitness rate of the old g</param>
         /// <param name="newFitness">Fitness rate of the new g</param>
         /// <returns>New generation with some parent elements</returns>
-        private List<Element> Elitism(IReadOnlyList<Element> oldG, List<Element> newG, IEnumerable<double> oldFitness,
+        private List<ElementVariables> Elitism(IReadOnlyList<ElementVariables> oldG, List<ElementVariables> newG, IEnumerable<double> oldFitness,
             IEnumerable<double> newFitness)
         {
             var parentsWontDie = (int)(_elitismRate * _numberOfElements);
             var oldFitnessList = oldFitness.ToList();
             var newFitnessList = newFitness.ToList();
-            
+
             for (var i = 0; i < parentsWontDie; i++)
             {
-                var oldButGold = oldFitnessList.FindIndex(
-                    fitness => Math.Abs(fitness - oldFitnessList.Max()) < Tolerantic
-                    );
-                var newButPfe = newFitnessList.FindIndex(
-                    fitness => Math.Abs(fitness - newFitnessList.Min()) < Tolerantic
-                    );
+                var oldButGold = FindMaxDoubleValueIdx(oldFitnessList);
+                var newButPfe = FindMinDoubleValueIdx(newFitnessList);
+
 
                 newG.RemoveAt(newButPfe);
-                newG.Insert(newButPfe, new Element()
+                newG.Insert(newButPfe, new ElementVariables()
                 {
                     Variables = oldG[oldButGold].Variables,
                 });
 
+
                 newFitnessList[newButPfe] = oldFitnessList[oldButGold];
+
+                // Reset best at parents list
+                oldFitnessList[oldButGold] = 0;
             }
 
             return newG;
@@ -420,7 +540,7 @@ namespace GenCon
         /// </summary>
         /// <param name="gener">Generation to be mutated</param>
         /// <returns>Mutated generation</returns>
-        private List<Element> Mutation(List<Element> gener)
+        private List<ElementVariables> Mutation(List<ElementVariables> gener)
         {
             var genesToBeMutated = (int)(_mutationRate * _numberOfElements);
 
