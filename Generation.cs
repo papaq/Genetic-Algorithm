@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Media.Animation;
 
 namespace GenCon
 {
@@ -59,9 +58,6 @@ namespace GenCon
 
         // Randoms come from here
         private readonly Random _random;
-
-        // Value for comparison of two doubles
-        private const double Tolerantic = 0.000001;
 
         /// <summary>
         /// Constructor declaration
@@ -191,10 +187,6 @@ namespace GenCon
             // Set newGeneration as generation
             _generation.Clear();
             _generation = newGeneration;
-
-            // Set variables to find return values
-            fitnessArray = CalculateFitness(_generation);
-            maxFitnessIdx = FindMaxFitnessIndex(fitnessArray);
             
             // Return best element
             return CalculateFunction(_bestElement.Variables);
@@ -338,7 +330,7 @@ namespace GenCon
             for (var i = 0; i < _numberOfElements; i++)
             {
                 elementsMidRates[i] = i == bestValueIndex 
-                    ? 0.1 ////////////////////////////////////////////////////////////////////// Or another??????
+                    ? 0.001
                     : Math.Abs(bestValue - CalculateFunction(generation[i].Variables));
                 reversedRateSum += 1 / elementsMidRates[i];
             }
