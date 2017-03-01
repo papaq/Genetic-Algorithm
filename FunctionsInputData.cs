@@ -1,30 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace GenCon
+﻿namespace GenCon
 {
     /// <summary>
     /// The class contains basic data for all functions
     /// </summary>
-    class FunctionsInputData
+    internal class FunctionsInputData
     {
         public struct Interval
         {
-            public double intervalLeft;
-            public double intervalRight;
+            public double LeftBorder;
+            public double RightBorder;
         };
 
         // Array of functions' intervals
-        private Interval[] intervals;
+        private Interval[] _intervals;
 
         // Array of functions' Global optimum
-        private double[] glOptimum;
+        private double[] _glOptimum;
 
         // Array of numbers of variables in a function
-        private int[] numberOfVars;
+        private int[] _numberOfVars;
 
         public FunctionsInputData()
         {
@@ -35,29 +29,30 @@ namespace GenCon
 
         public Interval GetInterval(int idx)
         {
-            return intervals[idx];
+            return _intervals[idx];
         }
 
         public double GetGlobalOptimum(int idx)
         {
-            return glOptimum[idx];
+            return _glOptimum[idx];
         }
 
         public int GetNumOfVars(int idx)
         {
-            return numberOfVars[idx];
+            return _numberOfVars[idx];
         }
 
         private void FillIntervals()
         {
-            intervals = new Interval[]
+            _intervals = new[]
             {
                 AddInterval(-2.048, 2.048),
                 AddInterval(-2, 2),
                 AddInterval(-5, 10),
                 AddInterval(0, 10),
                 AddInterval(-10, 10),
-                AddInterval(-1.2, 1.2),
+                //AddInterval(-1.2, 1.2),
+                AddInterval(-2.048, 2.048),
                 AddInterval(-5.12, 5.12),
                 AddInterval(-512, 512),
             };
@@ -65,7 +60,7 @@ namespace GenCon
 
         private void FillGlobalOptimum()
         {
-            glOptimum = new double[]
+            _glOptimum = new[]
             {
                 3905.93,
                 3,
@@ -80,7 +75,7 @@ namespace GenCon
 
         private void FillNumberOfVars()
         {
-            numberOfVars = new int[]
+            _numberOfVars = new[]
             {
                 2,
                 2,
@@ -95,7 +90,7 @@ namespace GenCon
 
         private Interval AddInterval(double left, double right)
         {
-            return new Interval() { intervalLeft = left, intervalRight = right };
+            return new Interval() { LeftBorder = left, RightBorder = right };
         }
     }
 }

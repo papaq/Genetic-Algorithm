@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace GenCon
+﻿namespace GenCon
 {
     /// <summary>
     /// This class contains data about this very Function
@@ -12,16 +6,16 @@ namespace GenCon
     public class Function : FunctionBase
     {
         // Interval
-        protected double intervalLeft, intervalRange;
+        protected double IntervalLeftBorder, IntervalRange;
 
         // Number of variables
-        protected int numOfVariables;
+        protected int NumOfVariables;
 
         // Global optimum
-        protected double globalOptimum;
+        protected double GlobalOptimum;
 
         // Function itself
-        private FunctionCalculator functionCalc;
+        private FunctionCalculator _functionCalc;
 
         /// <summary>
         /// Constructor declaration
@@ -33,10 +27,10 @@ namespace GenCon
         /// <param name="idx">Index of the function name</param>
         protected Function(double left, double range, int vars, double optimum, int idx)
         {
-            intervalLeft = left;
-            intervalRange = range;
-            numOfVariables = vars;
-            globalOptimum = optimum;
+            IntervalLeftBorder = left;
+            IntervalRange = range;
+            NumOfVariables = vars;
+            GlobalOptimum = optimum;
 
             SetAFunction(idx);
         }
@@ -47,8 +41,7 @@ namespace GenCon
         /// <param name="idx">Index of the function name in an array</param>
         private void SetAFunction(int idx)
         {
-            FunctionLine allFunctions = new FunctionLine();
-            functionCalc = new FunctionCalculator(allFunctions.ChooseAFunction(idx));
+            _functionCalc = FunctionLine.ChooseAFunction(idx);
         }
 
         /// <summary>
@@ -58,7 +51,7 @@ namespace GenCon
         /// <returns>Result of the function</returns>
         protected double CalculateFunction(double[] variables)
         {
-            return functionCalc(variables);
+            return _functionCalc(variables);
         }
     }
 }

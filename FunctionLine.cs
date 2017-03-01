@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GenCon
 {
@@ -11,7 +8,7 @@ namespace GenCon
     /// </summary>
     public class FunctionLine : FunctionBase
     {
-        public FunctionCalculator ChooseAFunction(int idx)
+        public static FunctionCalculator ChooseAFunction(int idx)
         {
             switch (idx)
             {
@@ -26,21 +23,23 @@ namespace GenCon
                 case 4:
                     return Rosenbrock();
                 case 5:
-                    return RosenbrockII();
+                    return Rosenbrock2();
+                case 6:
+                    return HyperSphere();
                 default:
                     return Griewangk();
             }
         }
 
-        private FunctionCalculator DeJong()
+        private static FunctionCalculator DeJong()
         {
-            return parList =>
-            {
-                return (3905.93) - 100 * Math.Pow((Math.Pow(parList[0], 2) - parList[1]), 2) - Math.Pow((1 - parList[0]), 2);
-            };
+            return
+                parList =>
+                    (3905.93) - 100 * Math.Pow((Math.Pow(parList[0], 2) - parList[1]), 2) -
+                    Math.Pow((1 - parList[0]), 2);
         }
 
-        private FunctionCalculator GoldsteinPrice()
+        private static FunctionCalculator GoldsteinPrice()
         {
             return parList =>
             {
@@ -51,16 +50,16 @@ namespace GenCon
             };
         }
 
-        private FunctionCalculator Branin()
+        private static FunctionCalculator Branin()
         {
             return parList =>
             {
-                return Math.Pow((parList[1] - 5.1 * Math.Pow(7 / 22, 2) / 4 * Math.Pow(parList[0], 2) + 35 * parList[0] / 22 - 6), 2)
+                return Math.Pow((parList[1] - 5.1 * Math.Pow((double)7 / 22, 2) / 4 * Math.Pow(parList[0], 2) + 35 * parList[0] / 22 - 6), 2)
                 + (10 - 70 / 176) * Math.Cos(parList[0]) + 10;
             };
         }
 
-        private FunctionCalculator MartinGaddy()
+        private static FunctionCalculator MartinGaddy()
         {
             return parList =>
             {
@@ -68,7 +67,7 @@ namespace GenCon
             };
         }
 
-        private FunctionCalculator Rosenbrock()
+        private static FunctionCalculator Rosenbrock()
         {
             return parList =>
             {
@@ -76,50 +75,44 @@ namespace GenCon
             };
         }
 
-        private FunctionCalculator RosenbrockII()
+        private static FunctionCalculator Rosenbrock2()
         {
             return parList =>
             {
                 double sum = 0;
 
-                for (int i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
-                    sum += 100 * Math.Pow((Math.Pow(parList[i], 2) - parList[i + 1]), 2) + Math.Pow((1 - parList[i]), 2);
+                    sum += 100 * Math.Pow(Math.Pow(parList[i], 2) - parList[i + 1], 2) + Math.Pow(1 - parList[i], 2);
                 }
 
                 return sum;
             };
         }
 
-        private FunctionCalculator HyperSphere()
+        private static FunctionCalculator HyperSphere()
         {
             return parList =>
             {
-                double sum = 0;
-
-                for (int i = 0; i < parList.Length; i++)
-                {
-                    sum += Math.Pow(parList[i], 2);
-                }
-
-                return sum;
+                return parList.Sum(t => Math.Pow(t, 2));
             };
         }
 
-        private FunctionCalculator Griewangk()
+        private static FunctionCalculator Griewangk()
         {
             return parList =>
             {
                 double sum = 0;
                 double mult = 1;
 
-                for (int i = 0; i < parList.Length; i++)
+                for (var i = 0; i < parList.Length; i++)
                 {
                     sum += Math.Pow(parList[i], 2) / 4000;
                     mult *= Math.Cos(parList[i] / Math.Sqrt(i + 1));
                 }
 
-                return 1 / (1.1 + sum - mult);
+                //return 1 / (1.1 + sum - mult);
+                return 1 + sum - mult;
             };
         }
     }

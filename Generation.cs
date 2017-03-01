@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GenCon
 {
@@ -16,7 +14,7 @@ namespace GenCon
         /// </summary>
         public struct Element
         {
-            public double[] variables;
+            public double[] Variables;
         }
 
         /// <summary>
@@ -24,29 +22,33 @@ namespace GenCon
         /// </summary>
         public struct ElementOptimum
         {
-            public double optimum;
-            public double fitness;
-            public Element element;
+            public double Optimum;
+            public double Fitness;
+            public Element Element;
         }
 
+        //public static double AvarageFitnessRate;    
 
         // List of all elements in a generation
-        private List<Element> generation;
+        private List<Element> _generation;
 
         // Number of elements in a generation
-        private int numberOfElements;
+        private readonly int _numberOfElements;
 
         // Array of fitness factors
-        private double[] elsFitnessFactors;
+        private double[] _elementsFitnessFactors;
 
         // Part of Elements taking part in elitism
-        private double elitismRate;
+        private readonly double _elitismRate;
 
         // Part of Elements that take part in mutations
-        private double mutationRate;
+        private readonly double _mutationRate;
 
         // Randoms come from here
-        private Random random;
+        private readonly Random _random;
+
+        // Value for comparison of two doubles
+        private const double Tolerantic = 0.000001;
 
         /// <summary>
         /// Constructor declaration
@@ -63,13 +65,13 @@ namespace GenCon
             : base(left, right - left, numOfVars, optimum, funcIdx)
         {
 
-            numberOfElements = numOfLs;
-            generation = new List<Element>();
-            elsFitnessFactors = new double[numOfLs];
-            elitismRate = elitism;
-            mutationRate = mutation;
+            _numberOfElements = numOfLs;
+            _generation = new List<Element>();
+            _elementsFitnessFactors = new double[numOfLs];
+            _elitismRate = elitism;
+            _mutationRate = mutation;
 
-            random = new Random();
+            _random = new Random();
 
             FillGeneration();
         }
@@ -80,74 +82,86 @@ namespace GenCon
         /// <returns>Element with best fitness</returns>
         public ElementOptimum LifeCycle()
         {
-            // Calculate fitness for our generation
-            double[] fitnessArray = CalculateFitness(generation);
 
-            // Check if Optimum found than return it
-            int maxFitnessIdx = FindMaxFitness(generation, fitnessArray);
+            // Fitness calculation
+            // Selection
+            // Crossing over
+            // New fitness calculation
+            // Elitism
+            // Mutation
+            // Replace parents with children
+
+
+            // Calculate fitness for our generation
+            var fitnessArray = CalculateFitness(_generation);
+
+            // Check if Optimum is found than return it
+            var maxFitnessIdx = FindMaxFitness(fitnessArray);
             if (fitnessArray[maxFitnessIdx] > .99)
             {
                 return new ElementOptimum()
                 {
-                    element = generation[maxFitnessIdx],
-                    optimum = CalculateFunction(generation[maxFitnessIdx].variables),
-                    fitness = fitnessArray[maxFitnessIdx],
+                    Element = _generation[maxFitnessIdx],
+                    Optimum = CalculateFunction(_generation[maxFitnessIdx].Variables),
+                    Fitness = fitnessArray[maxFitnessIdx],
                 };
             }
 
             // Choose parents for a new generation
-            int[] parents = TournamentSelection(fitnessArray);
+            var parents = TournamentSelection(fitnessArray);
 
             // Create new generation and calculate fitness rates
-            List<Element> newGeneration = Crossover(parents);
-            double[] newGenFitnessArray = CalculateFitness(newGeneration);
+            var newGeneration = CrossingOver(parents);
+            var newGenFitnessArray = CalculateFitness(newGeneration);
 
-            // Check if Optimum found than return it
-            maxFitnessIdx = FindMaxFitness(newGeneration, newGenFitnessArray);
-            if (newGenFitnessArray[maxFitnessIdx] > .98)
+            // Check if Optimum is found than return it
+            maxFitnessIdx = FindMaxFitness(newGenFitnessArray);
+            if (newGenFitnessArray[maxFitnessIdx] > .99)
             {
                 return new ElementOptimum()
                 {
-                    element = newGeneration[maxFitnessIdx],
-                    optimum = CalculateFunction(newGeneration[maxFitnessIdx].variables),
-                    fitness = newGenFitnessArray[maxFitnessIdx],
+                    Element = newGeneration[maxFitnessIdx],
+                    Optimum = CalculateFunction(newGeneration[maxFitnessIdx].Variables),
+                    Fitness = newGenFitnessArray[maxFitnessIdx],
                 };
             }
 
             // Execute elitism
-            newGeneration = Elitism(generation, newGeneration, fitnessArray, newGenFitnessArray);
+            newGeneration = Elitism(_generation, newGeneration, fitnessArray, newGenFitnessArray);
             
             // Execute mutation
             newGeneration = Mutation(newGeneration);
 
             // Set newGeneration as generation
-            generation.Clear();
-            generation = newGeneration;
+            _generation.Clear();
+            _generation = newGeneration;
 
             // Set variables to find return values
-            fitnessArray = CalculateFitness(generation);
-            maxFitnessIdx = FindMaxFitness(generation, fitnessArray);
+            fitnessArray = CalculateFitness(_generation);
+            maxFitnessIdx = FindMaxFitness(fitnessArray);
+
+            // Calculate avarage fitness
+            //CalculateAvarageFitness(fitnessArray);
 
             // Return best element
             return new ElementOptimum()
             {
-                element = generation[maxFitnessIdx],
-                optimum = CalculateFunction(generation[maxFitnessIdx].variables),
-                fitness = fitnessArray[maxFitnessIdx],
+                Element = _generation[maxFitnessIdx],
+                Optimum = CalculateFunction(_generation[maxFitnessIdx].Variables),
+                Fitness = fitnessArray[maxFitnessIdx],
             };
         }
 
         /// <summary>
         /// Find the index of an element with best fitness
         /// </summary>
-        /// <param name="gen">Generation</param>
         /// <param name="fitnessArray">Array of fitness values</param>
         /// <returns>Index of an element</returns>
-        private int FindMaxFitness(List<Element> gen, double[] fitnessArray)
+        private int FindMaxFitness(IReadOnlyList<double> fitnessArray)
         {
-            int tempMaxFitnessIdx = 0;
+            var tempMaxFitnessIdx = 0;
 
-            for (int i = 1; i < numberOfElements; i++)
+            for (var i = 1; i < _numberOfElements; i++)
             {
                 if (fitnessArray[i] > fitnessArray[tempMaxFitnessIdx])
                 {
@@ -158,15 +172,26 @@ namespace GenCon
             return tempMaxFitnessIdx;
         }
 
+        /*
+        /// <summary>
+        /// Calculates avarage fitness rate for ui
+        /// </summary>
+        /// <param name="fitnessRates">Array of fitness rates</param>
+        private void CalculateAvarageFitness(double[] fitnessRates)
+        {
+            AvarageFitnessRate = fitnessRates.Sum() / fitnessRates.Length;
+        }
+        */
+
         /// <summary>
         /// Fills the generation with elements
         /// </summary>
         private void FillGeneration()
         {
-            for (int i = 0; i < numberOfElements; i++)
+            for (var i = 0; i < _numberOfElements; i++)
             {
-                generation.Add(new Element() {
-                    variables = FillElementRandom(),
+                _generation.Add(new Element() {
+                    Variables = FillElementRandom(),
                 });
             }
         }
@@ -177,8 +202,8 @@ namespace GenCon
         /// <returns>Array of element's variables</returns>
         private double[] FillElementRandom()
         {
-            double[] varsArray = new double[numOfVariables];
-            for (int i = 0; i < numOfVariables; i++)
+            var varsArray = new double[NumOfVariables];
+            for (var i = 0; i < NumOfVariables; i++)
             {
                 varsArray[i] = RandomFromRange();
             }
@@ -192,7 +217,7 @@ namespace GenCon
         /// <returns>Real number</returns>
         private double RandomFromRange()
         {
-            return random.NextDouble() * intervalRange + intervalLeft;
+            return _random.NextDouble() * IntervalRange + IntervalLeftBorder;
         }
 
         /// <summary>
@@ -200,19 +225,19 @@ namespace GenCon
         /// </summary>
         /// <param name="generation">Specific generation</param>
         /// <returns>Array of fitnesses for every element</returns>
-        private double[] CalculateFitness(List<Element> generation)
+        private double[] CalculateFitness(IReadOnlyList<Element> generation)
         {
-            double[] newFitnessFactors = new double[numberOfElements];
-            double[] elementsMidRates = new double[numberOfElements];
+            var newFitnessFactors = new double[_numberOfElements];
+            var elementsMidRates = new double[_numberOfElements];
             double reversedRateSum = 0;
 
-            for (int i = 0; i < numberOfElements; i++)
+            for (var i = 0; i < _numberOfElements; i++)
             {
-                elementsMidRates[i] = Math.Abs(globalOptimum - CalculateFunction(generation[i].variables));
+                elementsMidRates[i] = Math.Abs(GlobalOptimum - CalculateFunction(generation[i].Variables));
                 reversedRateSum += 1 / elementsMidRates[i];
             }
 
-            for (int i = 0; i < numberOfElements; i++)
+            for (var i = 0; i < _numberOfElements; i++)
             {
                 newFitnessFactors[i] = 1 / (elementsMidRates[i] * reversedRateSum);
             }
@@ -224,16 +249,15 @@ namespace GenCon
         /// Selects parents for the new generation
         /// </summary>
         /// <param name="fitnessFactors">Array of fitnesses for every element</param>
-        /// <param name="rnd">Instance of Random class</param>
         /// <returns>Array of parents that go in pairs one by one</returns>
-        private int[] TournamentSelection(double[] fitnessFactors)
+        private int[] TournamentSelection(IReadOnlyList<double> fitnessFactors)
         {
-            int[] parentsArray = new int[numberOfElements * 2];
+            var parentsArray = new int[_numberOfElements * 2];
 
-            for (int i = 0; i < numberOfElements * 2; i++)
+            for (var i = 0; i < _numberOfElements * 2; i++)
             {
-                int candidate1 = random.Next(numberOfElements);
-                int candidate2 = random.Next(numberOfElements);
+                var candidate1 = _random.Next(_numberOfElements);
+                var candidate2 = _random.Next(_numberOfElements);
 
                 parentsArray[i] = fitnessFactors[candidate1] > fitnessFactors[candidate2] ? candidate1 : candidate2;
             }
@@ -246,29 +270,31 @@ namespace GenCon
         /// </summary>
         /// <param name="parentsArray">Array of parent pairs</param>
         /// <returns>A new generation</returns>
-        private List<Element> Crossover(int[] parentsArray)
+        private List<Element> CrossingOver(IReadOnlyList<int> parentsArray)
         {
-            List<Element> newGeneration = new List<Element>();
-            DottedCrossover crossoverType;
+            var newGeneration = new List<Element>();
+            DottedCrossover crossingOverType;
 
-            switch (numOfVariables)
+            switch (NumOfVariables)
             {
                 case 1:
-                    crossoverType = new DottedCrossover(ZeroDottedCrossover);
+                    crossingOverType = ZeroDottedCrossingOver;
                     break;
                 case 2:
-                    crossoverType = new DottedCrossover(OneDottedCrossover);
+                    crossingOverType = OneDottedCrossingOver;
                     break;
                 default:
-                    crossoverType = new DottedCrossover(TwoDottedCrossover);
+                    crossingOverType = TwoDottedCrossingOver;
                     break;
             }
 
-            for (int i = 0; i < numberOfElements; i++)
+            for (var i = 0; i < _numberOfElements; i++)
             {
                 newGeneration.Add(new Element()
                 {
-                    variables = crossoverType(generation[parentsArray[i * 2]].variables, generation[parentsArray[i * 2 + 1]].variables)
+                    Variables =
+                        crossingOverType(_generation[parentsArray[i * 2]].Variables,
+                            _generation[parentsArray[i * 2 + 1]].Variables)
                 });
             }
 
@@ -281,9 +307,9 @@ namespace GenCon
         /// <param name="parent1">The first parent</param>
         /// <param name="parent2">The second parent</param>
         /// <returns></returns>
-        private double[] ZeroDottedCrossover(double[] parent1, double[] parent2)
+        private double[] ZeroDottedCrossingOver(double[] parent1, double[] parent2)
         {
-            return new double[] { random.Next(2) > 0 ? parent2[0] : parent1[0] };
+            return new[] { _random.Next(2) > 0 ? parent2[0] : parent1[0] };
         }
 
         /// <summary>
@@ -292,17 +318,17 @@ namespace GenCon
         /// <param name="parent1">The first parent</param>
         /// <param name="parent2">The second parent</param>
         /// <returns></returns>
-        private double[] OneDottedCrossover(double[] parent1, double[] parent2)
+        private double[] OneDottedCrossingOver(double[] parent1, double[] parent2)
         {
-            int dot = random.Next(numOfVariables - 1);
-            double[] newElement = new double[numOfVariables];
+            var dot = _random.Next(NumOfVariables - 1);
+            var newElement = new double[NumOfVariables];
 
-            for (int i = 0; i < dot + 1; i++)
+            for (var i = 0; i < dot + 1; i++)
             {
                 newElement[i] = parent1[i];
             }
 
-            for (int i = dot + 1; i < numOfVariables; i++)
+            for (var i = dot + 1; i < NumOfVariables; i++)
             {
                 newElement[i] = parent2[i];
             }
@@ -316,36 +342,36 @@ namespace GenCon
         /// <param name="parent1">The first parent</param>
         /// <param name="parent2">The second parent</param>
         /// <returns></returns>
-        private double[] TwoDottedCrossover(double[] parent1, double[] parent2)
+        private double[] TwoDottedCrossingOver(double[] parent1, double[] parent2)
         {
-            int dot1, dot2;
-            dot1 = random.Next(numOfVariables - 1);
-            double[] newElement = new double[numOfVariables];
+            int dot2;
+            var dot1 = _random.Next(NumOfVariables - 1);
+            var newElement = new double[NumOfVariables];
 
             do
             {
-                dot2 = random.Next(numOfVariables - 1);
+                dot2 = _random.Next(NumOfVariables - 1);
             } while (dot1 == dot2);
 
             if (dot1 > dot2)
             {
-                int t = dot1;
+                var t = dot1;
                 dot1 = dot2;
                 dot2 = t;
             }
             
 
-            for (int i = 0; i < dot1 + 1; i++)
+            for (var i = 0; i < dot1 + 1; i++)
             {
                 newElement[i] = parent1[i];
             }
 
-            for (int i = dot1 + 1; i < dot2 + 1; i++)
+            for (var i = dot1 + 1; i < dot2 + 1; i++)
             {
                 newElement[i] = parent2[i];
             }
 
-            for (int i = dot2 + 1; i < numOfVariables; i++)
+            for (var i = dot2 + 1; i < NumOfVariables; i++)
             {
                 newElement[i] = parent1[i];
             }
@@ -361,22 +387,26 @@ namespace GenCon
         /// <param name="oldFitness">Fitness rate of the old g</param>
         /// <param name="newFitness">Fitness rate of the new g</param>
         /// <returns>New generation with some parent elements</returns>
-        private List<Element> Elitism(List<Element> oldG, List<Element> newG, double[] oldFitness, double[] newFitness)
+        private List<Element> Elitism(IReadOnlyList<Element> oldG, List<Element> newG, IEnumerable<double> oldFitness,
+            IEnumerable<double> newFitness)
         {
-            int parentsWontDie = (int)(elitismRate * numberOfElements);
-            List<double> oldFitnessList, newFitnessList;
-            oldFitnessList = oldFitness.ToList();
-            newFitnessList = newFitness.ToList();
+            var parentsWontDie = (int)(_elitismRate * _numberOfElements);
+            var oldFitnessList = oldFitness.ToList();
+            var newFitnessList = newFitness.ToList();
             
-            for (int i = 0; i < parentsWontDie; i++)
+            for (var i = 0; i < parentsWontDie; i++)
             {
-                int oldButGold = oldFitnessList.FindIndex(fitness => fitness == oldFitnessList.Max());
-                int newButPfe = newFitnessList.FindIndex(fitness => fitness == newFitnessList.Min());
+                var oldButGold = oldFitnessList.FindIndex(
+                    fitness => Math.Abs(fitness - oldFitnessList.Max()) < Tolerantic
+                    );
+                var newButPfe = newFitnessList.FindIndex(
+                    fitness => Math.Abs(fitness - newFitnessList.Min()) < Tolerantic
+                    );
 
                 newG.RemoveAt(newButPfe);
                 newG.Insert(newButPfe, new Element()
                 {
-                    variables = oldG[oldButGold].variables,
+                    Variables = oldG[oldButGold].Variables,
                 });
 
                 newFitnessList[newButPfe] = oldFitnessList[oldButGold];
@@ -388,21 +418,21 @@ namespace GenCon
         /// <summary>
         /// Execute mutations with elements from current generation
         /// </summary>
-        /// <param name="generation">Generation to be mutated</param>
+        /// <param name="gener">Generation to be mutated</param>
         /// <returns>Mutated generation</returns>
-        private List<Element> Mutation(List<Element> generation)
+        private List<Element> Mutation(List<Element> gener)
         {
-            int genesToBeMutated = (int)(mutationRate * numberOfElements);
+            var genesToBeMutated = (int)(_mutationRate * _numberOfElements);
 
-            for (int i = 0; i < genesToBeMutated; i++)
+            for (var i = 0; i < genesToBeMutated; i++)
             {
-                int randomElement = random.Next(numberOfElements);
-                int randomGene = random.Next(numOfVariables);
+                var randomElement = _random.Next(_numberOfElements);
+                var randomGene = _random.Next(NumOfVariables);
 
-                generation[randomElement].variables[randomGene] = RandomFromRange();
+                gener[randomElement].Variables[randomGene] = RandomFromRange();
             }
 
-            return generation;
+            return gener;
         }
     }
 }

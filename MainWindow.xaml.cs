@@ -1,39 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Globalization;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace GenCon
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         // Array of Functions' names
-        private string[] FunctionList;
+        private string[] _functionList;
 
         // Flag to control whether we calculate or stop
-        private bool goOn = false;
+        private bool _goOn;
 
-        private int functionIndex = 0;
+        private int _functionIndex;
 
-        private static int numberOfEls, numberOfVars;
-        private static double intervalLeft, intervalRight;
-        private static double globalOptimum, elitismRate, mutationRate;
+        private static int _numberOfEls, _numberOfVars;
+        private static double _leftBorder, _rightBorder;
+        private static double _globalOptimum, _elitismRate, _mutationRate;
 
-        FunctionsInputData funcInputData;
+        readonly FunctionsInputData _funcInputData;
 
         public MainWindow()
         {
@@ -43,11 +34,11 @@ namespace GenCon
             FillFuncNamesArray();
 
             // Init Functions' input data
-            funcInputData = new FunctionsInputData();
+            _funcInputData = new FunctionsInputData();
 
 
             // Put List into Combobox
-            ComboBox_FunctionList.ItemsSource = FunctionList;
+            ComboBox_FunctionList.ItemsSource = _functionList;
             // The first in list is chosen
             ComboBox_FunctionList.SelectedValue = ComboBox_FunctionList.Items[0];
             
@@ -55,7 +46,7 @@ namespace GenCon
         
         private void FillFuncNamesArray()
         {
-            FunctionList = new string[]
+            _functionList = new[]
             {
                 "De Jong",
                 "Goldstein & Price",
@@ -73,40 +64,42 @@ namespace GenCon
             if (Equals(Button_StartStop.Content, "Start"))
             {
                 Button_StartStop.Content = "Stop";
-                if (!goOn)
+                if (!_goOn)
                 {
-                    goOn = true;
+                    _goOn = true;
                 }
 
                 FillStaticVars();
 
-                Thread thread = new Thread(FindGeneration);
-                thread.Start();
+                var genThread = new Thread(FindGeneration);
+                genThread.Start();
+                var timeThread = new Thread(CountTime);
+                timeThread.Start();
             }
             else
             {
                 Button_StartStop.Content = "Start";
-                if (goOn)
+                if (_goOn)
                 {
-                    goOn = false;
+                    _goOn = false;
                 }
             }
         }
 
         private void FillStaticVars()
         {
-            numberOfEls = Convert.ToInt16(TextBox_NumberOfEls.Text);
-            numberOfVars = funcInputData.GetNumOfVars(functionIndex);
-            intervalLeft = funcInputData.GetInterval(functionIndex).intervalLeft;
-            intervalRight = funcInputData.GetInterval(functionIndex).intervalRight;
-            globalOptimum = funcInputData.GetGlobalOptimum(functionIndex);
-            elitismRate = Convert.ToDouble(textBox_Elitism_ParentsInNextGen.Text);
-            mutationRate = Convert.ToDouble(TextBox_MutantsInGen.Text);
+            _numberOfEls = Convert.ToInt16(TextBox_NumberOfEls.Text);
+            _numberOfVars = _funcInputData.GetNumOfVars(_functionIndex);
+            _leftBorder = _funcInputData.GetInterval(_functionIndex).LeftBorder;
+            _rightBorder = _funcInputData.GetInterval(_functionIndex).RightBorder;
+            _globalOptimum = _funcInputData.GetGlobalOptimum(_functionIndex);
+            _elitismRate = Convert.ToDouble(textBox_Elitism_ParentsInNextGen.Text);
+            _mutationRate = Convert.ToDouble(TextBox_MutantsInGen.Text);
         }
 
         private void ComboBox_FunctionList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ComboBox_FunctionList.Items.Count == 0 || funcInputData == null)
+            if (ComboBox_FunctionList.Items.Count == 0 || _funcInputData == null)
             {
                 return;
             }
@@ -116,62 +109,74 @@ namespace GenCon
                 Button_StartStop.IsEnabled = true;
             }
 
-            functionIndex = ComboBox_FunctionList.SelectedIndex;
+            _functionIndex = ComboBox_FunctionList.SelectedIndex;
 
-            TextBox_IntervalLeft.Text = funcInputData.GetInterval(functionIndex).intervalLeft.ToString();
-            TextBox_IntervalRight.Text = funcInputData.GetInterval(functionIndex).intervalRight.ToString();
+            TextBox_IntervalLeft.Text = _funcInputData.GetInterval(_functionIndex).LeftBorder.ToString(CultureInfo.InvariantCulture);
+            TextBox_IntervalRight.Text = _funcInputData.GetInterval(_functionIndex).RightBorder.ToString(CultureInfo.InvariantCulture);
 
-            TextBox_GlobalOptimum.Text = funcInputData.GetGlobalOptimum(functionIndex).ToString();
+            TextBox_GlobalOptimum.Text =
+                _funcInputData.GetGlobalOptimum(_functionIndex).ToString(CultureInfo.InvariantCulture);
+        }
+
+        private void CountTime()
+        {
+            var stopW = System.Diagnostics.Stopwatch.StartNew();
+            while (_goOn)
+            {
+                InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
+                    Label_TimeGone.Content = (stopW.ElapsedMilliseconds/1000).ToString();
+                });
+                Thread.Sleep(1000);
+            }
+            stopW.Stop();
         }
 
         private void FindGeneration()
         {
-            Generation generationInstance = new Generation(
-                numberOfEls,
-                numberOfVars,
-                intervalLeft,
-                intervalRight,
-                globalOptimum,
-                functionIndex,
-                elitismRate,
-                mutationRate);
+            var generationInstance = new Generation(
+                _numberOfEls,
+                _numberOfVars,
+                _leftBorder,
+                _rightBorder,
+                _globalOptimum,
+                _functionIndex,
+                _elitismRate,
+                _mutationRate);
 
             long genIdx = 1;
-            while (goOn)
+            while (_goOn)
             {
-                Generation.ElementOptimum currentBestElement = generationInstance.LifeCycle();
+                var currentBestElement = generationInstance.LifeCycle();
                 
 
-                if (genIdx % 10 == 0)
-                {
-                    InvokeActonWithDispatcher(Label_GenerationCurrent, new Action(delegate ()
-                    {
-                        Label_GenerationCurrent.Content = genIdx.ToString();
-                    }));
-                }
+                //if (genIdx % 10 == 0)
+                //{
+                var idx = genIdx;
+                InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
+                    Label_GenerationCurrent.Content = idx.ToString();
+                });
+                //}
 
-                InvokeActonWithDispatcher(Label_GenerationCurrent, new Action(delegate ()
-                {
-                    Label_OptimumNow.Content = currentBestElement.optimum.ToString();
-                }));
-
+                InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
+                    Label_OptimumNow.Content = String.Format("{0:0.##### }", currentBestElement.Optimum);
+                });
+                
                 Thread.Sleep(10);
 
 
-                if (currentBestElement.fitness > .99)
+                if (currentBestElement.Fitness > .99)
                 {
-                    goOn = false;
-                    InvokeActonWithDispatcher(Label_GenerationCurrent, new Action(delegate ()
-                    {
+                    _goOn = false;
+                    InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
                         Button_StartStop.Content = "Start";
-                    }));
+                    });
                 }
 
                 genIdx++;
             }
         }
 
-        private void InvokeActonWithDispatcher(UIElement uiElement, Action action)
+        private static void InvokeActonWithDispatcher(DispatcherObject uiElement, Action action)
         {
             uiElement.Dispatcher.BeginInvoke(action);
         }
