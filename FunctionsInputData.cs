@@ -111,7 +111,7 @@
             };
         }
 
-        private Interval AddInterval(double left, double right)
+        private static Interval AddInterval(double left, double right)
         {
             return new Interval() { LeftBorder = left, RightBorder = right };
         }

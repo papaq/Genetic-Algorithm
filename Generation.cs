@@ -153,7 +153,7 @@ namespace GenCon
 
 
             // Calculate fitness for our generation
-            var fitnessArray = CalculateFitness(_generation);/////////////////////////////////////////////////////
+            var fitnessArray = CalculateFitness(_generation);
 
             // Check if Optimum is found than return it
             var maxFitnessIdx = FindMaxFitnessIndex(fitnessArray);
@@ -197,22 +197,8 @@ namespace GenCon
         /// </summary>
         /// <param name="fitnessArray">Array of fitness values</param>
         /// <returns>Index of an element</returns>
-        private int FindMaxFitnessIndex(IReadOnlyList<double> fitnessArray)
+        private static int FindMaxFitnessIndex(IReadOnlyList<double> fitnessArray)
         {
-            /*
-            var tempMaxFitnessIdx = 0;
-
-            for (var i = 1; i < _numberOfElements; i++)
-            {
-                if (fitnessArray[i] > fitnessArray[tempMaxFitnessIdx])
-                {
-                    tempMaxFitnessIdx = i;
-                }
-            }
-
-            return tempMaxFitnessIdx;
-            */
-
             return FindMaxDoubleValueIdx(fitnessArray);
         }
 
@@ -498,8 +484,8 @@ namespace GenCon
         /// <param name="oldFitness">Fitness rate of the old g</param>
         /// <param name="newFitness">Fitness rate of the new g</param>
         /// <returns>New generation with some parent elements</returns>
-        private List<ElementVariables> Elitism(IReadOnlyList<ElementVariables> oldG, List<ElementVariables> newG, IEnumerable<double> oldFitness,
-            IEnumerable<double> newFitness)
+        private List<ElementVariables> Elitism(IReadOnlyList<ElementVariables> oldG, 
+            List<ElementVariables> newG, IEnumerable<double> oldFitness, IEnumerable<double> newFitness)
         {
             var parentsWontDie = (int)(_elitismRate * _numberOfElements);
             var oldFitnessList = oldFitness.ToList();

@@ -163,7 +163,7 @@ namespace GenCon
                 });
 
                 InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
-                    Label_OptimumNow.Content = String.Format("{0:0.##### }", currentBestElement);
+                    Label_OptimumNow.Content = String.Format("{0:0.####### }", currentBestElement);
                 });
                 
                 Thread.Sleep(0);

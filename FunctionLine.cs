@@ -35,18 +35,20 @@ namespace GenCon
         {
             return
                 parList =>
-                    (3905.93) - 100 * Math.Pow((Math.Pow(parList[0], 2) - parList[1]), 2) -
-                    Math.Pow((1 - parList[0]), 2);
+                    3905.93 - 100 * Math.Pow(Math.Pow(parList[0], 2) - parList[1], 2) -
+                    Math.Pow(1 - parList[0], 2);
         }
 
         private static FunctionCalculator GoldsteinPrice()
         {
             return parList =>
             {
-                return (1 + Math.Pow((parList[0] + parList[1] + 1), 2)
-                * (19 - 14 * parList[0] + 3 * Math.Pow(parList[0], 2) - 14 * parList[1] + 6 * parList[0] * parList[1] + 3 * Math.Pow(parList[1], 2)))
-                * (30 + Math.Pow((2 * parList[0] - 3 * parList[1]), 2)
-                * (18 - 32 * parList[0] + 12 * Math.Pow(parList[0], 2) + 48 * parList[1] - 36 * parList[0] * parList[1] + 27 * Math.Pow(parList[1], 2)));
+                return (1 + Math.Pow(parList[0] + parList[1] + 1, 2)
+                    * (19 - 14 * parList[0] + 3 * Math.Pow(parList[0], 2) 
+                        - 14 * parList[1] + 6 * parList[0] * parList[1] + 3 * Math.Pow(parList[1], 2)))
+                    * (30 + Math.Pow(2 * parList[0] - 3 * parList[1], 2)
+                    * (18 - 32 * parList[0] + 12 * Math.Pow(parList[0], 2) + 48 * parList[1] 
+                        - 36 * parList[0] * parList[1] + 27 * Math.Pow(parList[1], 2)));
             };
         }
 
@@ -61,8 +63,8 @@ namespace GenCon
                 const double s = 10;
                 const double t = 0.125 / Math.PI;
 
-                return a * Math.Pow(parList[1] - b * Math.Pow(parList[0], 2) + c * parList[0] - r, 2) +
-                       s * (1 - t) * Math.Cos(parList[0]) + s;
+                return a * Math.Pow(parList[1] - b * Math.Pow(parList[0], 2) + c * parList[0] - r, 2) 
+                    + s * (1 - t) * Math.Cos(parList[0]) + s;
             };
         }
 
@@ -70,7 +72,8 @@ namespace GenCon
         {
             return parList =>
             {
-                return Math.Pow((parList[0] - parList[1]), 2) + Math.Pow(((parList[0] + parList[1] - 10) / 3), 2);
+                return Math.Pow(parList[0] - parList[1], 2) 
+                    + Math.Pow((parList[0] + parList[1] - 10) / 3, 2);
             };
         }
 
@@ -78,7 +81,8 @@ namespace GenCon
         {
             return parList =>
             {
-                return 100 * Math.Pow((Math.Pow(parList[0], 2) - parList[1]), 2) + Math.Pow((1 - parList[0]), 2);
+                return 100 * Math.Pow(Math.Pow(parList[0], 2) - parList[1], 2) 
+                    + Math.Pow(1 - parList[0], 2);
             };
         }
 
@@ -90,7 +94,8 @@ namespace GenCon
 
                 for (var i = 0; i < 3; i++)
                 {
-                    sum += 100 * Math.Pow(Math.Pow(parList[i], 2) - parList[i + 1], 2) + Math.Pow(1 - parList[i], 2);
+                    sum += 100 * Math.Pow(Math.Pow(parList[i], 2) - parList[i + 1], 2) 
+                        + Math.Pow(1 - parList[i], 2);
                 }
 
                 return sum;
