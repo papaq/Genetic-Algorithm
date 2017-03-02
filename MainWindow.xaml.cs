@@ -87,6 +87,11 @@ namespace GenCon
             }
         }
 
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            _goOn = false;
+        }
+
         private void FillStaticVars()
         {
             _numberOfEls = Convert.ToInt32(TextBox_NumberOfEls.Text);

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GenCon"
         mc:Ignorable="d"
-        Title="Genetic Algorithms" Height="399.333" Width="397.562" ResizeMode="CanMinimize" WindowStartupLocation="CenterOwner">
+        Title="Genetic Algorithms" Height="399.333" Width="397.562" ResizeMode="CanMinimize" WindowStartupLocation="CenterOwner" Closing="Window_Closing">
     <Grid>
         <Grid Margin="18,10,26,0" VerticalAlignment="Top">
             <Grid.RowDefinitions>

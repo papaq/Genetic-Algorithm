@@ -114,14 +114,14 @@ namespace GenCon
                 double sum = 0;
                 double mult = 1;
 
-                for (var i = 0; i < parList.Length; i++)
+                for (var i = 1; i < parList.Length + 1; i++)
                 {
-                    sum += Math.Pow(parList[i], 2) / 4000;
-                    mult *= Math.Cos(parList[i] / Math.Sqrt(i + 1));
+                    sum += Math.Pow(parList[i - 1], 2) / 4000;
+                    mult *= Math.Cos(parList[i - 1] / Math.Sqrt(i));
                 }
 
-                //return 1 / (1.1 + sum - mult);
-                return 1 + sum - mult;
+                return 1 / (1.1 + sum - mult);
+                //return 1 + sum - mult;
             };
         }
     }
