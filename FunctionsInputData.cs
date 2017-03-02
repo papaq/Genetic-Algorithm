@@ -60,7 +60,7 @@
                 AddInterval(0, 10),
                 AddInterval(-10, 10),
                 AddInterval(-1.2, 1.2),
-                //AddInterval(-2.048, 2.048),
+                AddInterval(-2.048, 2.048),
                 AddInterval(-5.12, 5.12),
                 AddInterval(-512, 512),
             };
