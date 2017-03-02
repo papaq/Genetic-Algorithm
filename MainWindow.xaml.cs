@@ -168,7 +168,7 @@ namespace GenCon
                 InvokeActonWithDispatcher(Label_GenerationCurrent, delegate {
                     Button_StartStop.Content = "Start";
                 });
-                break;
+                return;
             }
 
             _goOn = false;

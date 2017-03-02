@@ -54,8 +54,17 @@ namespace GenCon
         {
             return parList =>
             {
-                return Math.Pow((parList[1] - 5.1 * Math.Pow((double)7 / 22, 2) / 4 * Math.Pow(parList[0], 2) + 35 * parList[0] / 22 - 6), 2)
-                + (10 - 70 / 176) * Math.Cos(parList[0]) + 10;
+                const double a = 1;
+                var b = 5.1 / Math.Pow(Math.PI, 2) / 4;
+                const double c = 5 / Math.PI;
+                const double r = 6;
+                const double s = 10;
+                const double t = 0.125 / Math.PI;
+
+                return a * Math.Pow(parList[1] - b * Math.Pow(parList[0], 2) + c * parList[0] - r, 2) +
+                       s * (1 - t) * Math.Cos(parList[0]) + s;
+                //return Math.Pow(parList[1] - 5.1 * Math.Pow((double)7 / 22, 2) / 4 * Math.Pow(parList[0], 2) + 35 * parList[0] / 22 - 6, 2)
+                //+ (10 - 70 / 176) * Math.Cos(parList[0]) + 10;
             };
         }
 

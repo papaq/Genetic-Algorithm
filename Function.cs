@@ -3,7 +3,7 @@
     /// <summary>
     /// This class contains data about this very Function
     /// </summary>
-    public class Function : FunctionBase
+    public class Function : FunctionLine
     {
         // Interval
         protected double IntervalLeftBorder, IntervalRange;
@@ -41,7 +41,7 @@
         /// <param name="idx">Index of the function name in an array</param>
         private void SetAFunction(int idx)
         {
-            _functionCalc = FunctionLine.ChooseAFunction(idx);
+            _functionCalc = ChooseAFunction(idx);
         }
 
         /// <summary>
